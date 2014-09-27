@@ -35,12 +35,12 @@ func main() {
 
 EXAMPLE:
 	# show modified files
-	oo . "echo {{.}}" 
+	$ oo . "echo {{.}}" 
 
 	# rsync modified files
-	oo a "rsync -azvdc a/{{.Rel}} b/{{.Rel.Dir}}/" 
+	$ oo -m="nwrc" -s a "rsync -azvc a/{{.Rel}} b/{{.Rel.Dir}}/" 
 
 	# show deleted files
-	oo -m="d" . "echo deleted {{.}}"`
+	$ oo -m="d" . "echo deleted {{.}}"`
 	app.Run(os.Args)
 }
