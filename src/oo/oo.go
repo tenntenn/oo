@@ -75,7 +75,7 @@ func (oo *OO) Watch() error {
 				return err
 			}
 
-			if event.Op&fsnotify.Write == fsnotify.Write {
+			if event.Op&fsnotify.Create == fsnotify.Create {
 				if stat, err := os.Stat(event.Name); err != nil {
 					return err
 				} else if stat.IsDir() {
@@ -127,6 +127,7 @@ func (oo *OO) walkFunc(watcher *fsnotify.Watcher) filepath.WalkFunc {
 			if err := watcher.Add(path); err != nil {
 				return err
 			}
+			log.Println("watch", path)
 			oo.watched[path] = true
 		}
 
