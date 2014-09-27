@@ -25,6 +25,10 @@ func main() {
 	}
 	app.Action = func(c *cli.Context) {
 		args := c.Args()
+		if len(args) < 2 {
+			cli.ShowAppHelp(c)
+			return
+		}
 		o, err := oo.New(c.String("mode"), args[0], args[1], c.Bool("show"))
 		if err != nil {
 			log.Fatal(err)

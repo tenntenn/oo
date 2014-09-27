@@ -70,6 +70,11 @@ func (oo *OO) Watch() error {
 		select {
 		case event := <-watcher.Events:
 
+			file, err := filepath.Rel(oo.path.String(), event.Name)
+			if err != nil {
+				return err
+			}
+
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				if stat, err := os.Stat(event.Name); err != nil {
 					return err
@@ -92,9 +97,11 @@ func (oo *OO) Watch() error {
 
 			pre := oo.path.cd()
 			var buf bytes.Buffer
-			if err := oo.tmpl.Execute(&buf, Path(event.Name)); err != nil {
+			if err := oo.tmpl.Execute(&buf, Path(file)); err != nil {
 				return err
 			}
+			pre.cd()
+
 			if oo.show {
 				log.Println(buf.String())
 			}
@@ -106,7 +113,6 @@ func (oo *OO) Watch() error {
 			if err := cmd.Run(); err != nil {
 				log.Println(err)
 			}
-			pre.cd()
 		case err := <-watcher.Errors:
 			return err
 		}

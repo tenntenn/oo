@@ -8,10 +8,6 @@ import (
 type Path string
 
 func (p Path) String() string {
-	if string(p) == "." {
-		return ""
-	}
-
 	return string(p)
 }
 
