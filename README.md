@@ -1,4 +1,4 @@
-# oo - watch watch dir and execute command
+# oo
 
 ## Example
 
