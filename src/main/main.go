@@ -12,6 +12,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "oo"
 	app.Version = oo.Version
+	var defaultExcludes cli.StringSlice
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "mode,m",
@@ -22,6 +23,11 @@ func main() {
 			Name:  "show,s",
 			Usage: "show executed commands",
 		},
+		cli.StringSliceFlag{
+			Name:  "exclude,e",
+			Value: &defaultExcludes,
+			Usage: "exclude pattern",
+		},
 	}
 	app.Action = func(c *cli.Context) {
 		args := c.Args()
@@ -29,7 +35,7 @@ func main() {
 			cli.ShowAppHelp(c)
 			return
 		}
-		o, err := oo.New(c.String("mode"), args[0], args[1], c.Bool("show"))
+		o, err := oo.New(c.String("mode"), args[0], args[1], c.Bool("show"), c.StringSlice("exclude"))
 		if err != nil {
 			log.Fatal(err)
 		}

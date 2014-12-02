@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -13,14 +14,15 @@ import (
 )
 
 type OO struct {
-	mode    fsnotify.Op
-	show    bool
-	path    Path
-	tmpl    *template.Template
-	watched map[string]bool
+	mode     fsnotify.Op
+	show     bool
+	excludes []*regexp.Regexp
+	path     Path
+	tmpl     *template.Template
+	watched  map[string]bool
 }
 
-func New(mode, dir, cmd string, show bool) (*OO, error) {
+func New(mode, dir, cmd string, show bool, excludes []string) (*OO, error) {
 
 	path := Path(dir)
 
@@ -29,11 +31,21 @@ func New(mode, dir, cmd string, show bool) (*OO, error) {
 		return nil, err
 	}
 
+	regExcludes := make([]*regexp.Regexp, 0, len(excludes))
+	for _, exclude := range excludes {
+		regExclude, err := regexp.Compile(exclude)
+		if err != nil {
+			return nil, err
+		}
+		regExcludes = append(regExcludes, regExclude)
+	}
+
 	oo := &OO{
-		path:    path,
-		tmpl:    tmpl,
-		show:    show,
-		watched: make(map[string]bool),
+		path:     path,
+		tmpl:     tmpl,
+		show:     show,
+		excludes: regExcludes,
+		watched:  make(map[string]bool),
 	}
 
 	for _, ch := range mode {
@@ -66,13 +78,22 @@ func (oo *OO) Watch() error {
 		return err
 	}
 
+loop:
 	for {
 		select {
 		case event := <-watcher.Events:
 
 			file, err := filepath.Rel(oo.path.String(), event.Name)
 			if err != nil {
-				return err
+				log.Println(err.Error())
+				continue
+			}
+
+			for _, exclude := range oo.excludes {
+				if exclude.MatchString(file) {
+					log.Println("exclude", file)
+					continue loop
+				}
 			}
 
 			if event.Op&fsnotify.Create == fsnotify.Create {
@@ -80,7 +101,8 @@ func (oo *OO) Watch() error {
 					return err
 				} else if stat.IsDir() {
 					if err := filepath.Walk(event.Name, oo.walkFunc(watcher)); err != nil {
-						return err
+						log.Println(err.Error())
+						continue
 					}
 				}
 			}
@@ -98,7 +120,8 @@ func (oo *OO) Watch() error {
 			pre := oo.path.cd()
 			var buf bytes.Buffer
 			if err := oo.tmpl.Execute(&buf, Path(file)); err != nil {
-				return err
+				log.Println(err.Error())
+				continue
 			}
 			pre.cd()
 
